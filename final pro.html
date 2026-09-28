@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Campus Hub - Smart Floor Manager & Attendance Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>window.Chart||document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js"><\/script>')</script>
+<style>
+
+:root{--nav-h:calc(56px + env(safe-area-inset-top,0px));--s-bg:rgba(255,255,255,.86);--s-ink:#12131f;--s-mut:#666a80;--s-line:rgba(20,22,50,.1);--s-g1:#6366f1;--s-g2:#a855f7}
+:root[data-theme="dark"]{--s-bg:rgba(14,15,24,.86);--s-ink:#eef0fa;--s-mut:#9095ad;--s-line:rgba(255,255,255,.1);color-scheme:dark}
+html{scroll-padding-top:var(--nav-h)}
+body{margin:0;background:#f5f6fb}
+:root[data-theme="dark"] body{background:#0a0b12}
+.site-nav{position:sticky;top:0;z-index:100;height:var(--nav-h);padding:env(safe-area-inset-top,0px) 16px 0;display:flex;align-items:center;gap:14px;background:var(--s-bg);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--s-line);font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:var(--s-ink)}
+.site-brand{display:flex;align-items:center;gap:9px;font-weight:800;letter-spacing:-.02em;margin-right:auto}
+.site-mark{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--s-g1),var(--s-g2))}
+.site-tabs{display:flex;gap:4px}
+.site-tabs a{padding:7px 14px;border-radius:10px;font-size:.9rem;font-weight:600;color:var(--s-mut);text-decoration:none;transition:.15s}
+.site-tabs a:hover{color:var(--s-ink)}
+.site-tabs a[aria-current="page"]{color:#fff;background:linear-gradient(135deg,var(--s-g1),var(--s-g2))}
+.site-theme{border:1px solid var(--s-line);background:transparent;color:var(--s-ink);border-radius:10px;padding:7px 12px;font:600 .85rem 'Plus Jakarta Sans',system-ui,sans-serif;cursor:pointer}
+.site-nav :focus-visible{outline:2px solid var(--s-g1);outline-offset:2px}
+.app:not(.on){display:none!important}
+#app-floor.on{display:block}#app-att.on{display:flex}
+@media(max-width:560px){.site-brand span{display:none}.site-nav{padding-left:10px;padding-right:10px;gap:8px}.site-tabs a{padding:7px 10px;font-size:.84rem}}
+
+/* ===== Floor Manager (scoped) ===== */
+#app-floor{--bg:#f5f6fb;--ink:#12131f;--mut:#666a80;--glass:rgba(255,255,255,.68);--line:rgba(20,22,50,.09);--g1:#6366f1;--g2:#a855f7;--ok:#15803d;--bad:#d63b41;--soon:#a16207;--rec:#2455e6;--sh:0 10px 34px rgba(40,40,90,.10);}
+:root[data-theme="dark"] #app-floor{--bg:#0a0b12;--ink:#eef0fa;--mut:#9095ad;--glass:rgba(26,28,44,.6);--line:rgba(255,255,255,.09);--ok:#4ade80;--bad:#ff6b70;--soon:#facc15;--rec:#6d9bff;--sh:0 10px 34px rgba(0,0,0,.4)}
+#app-floor,#app-floor *{box-sizing:border-box;margin:0}
+#app-floor{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:calc(100vh - var(--nav-h));line-height:1.5}
+#app-floor:before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(600px 420px at 8% 0,rgba(99,102,241,.24),transparent),radial-gradient(520px 420px at 96% 18%,rgba(168,85,247,.2),transparent),radial-gradient(520px 420px at 50% 100%,rgba(36,85,230,.14),transparent)}
+#app-floor button,#app-floor select,#app-floor input{font:inherit;color:inherit}
+#app-floor button{cursor:pointer}
+#app-floor .wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+#app-floor .glass{background:var(--glass);backdrop-filter:blur(18px) saturate(1.3);-webkit-backdrop-filter:blur(18px) saturate(1.3);border:1px solid var(--line);border-radius:20px;box-shadow:var(--sh)}
+#app-floor .top{position:sticky;top:0;z-index:20;margin:12px auto 0;max-width:1180px;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-radius:16px}
+#app-floor .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.02em;margin-right:auto}
+#app-floor .mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--g1),var(--g2));box-shadow:0 4px 14px rgba(99,102,241,.5)}
+#app-floor .pill,#app-floor select,#app-floor .btn{border:1px solid var(--line);background:var(--glass);border-radius:11px;padding:7px 12px;font-size:.88rem}
+#app-floor .pill{display:inline-flex;align-items:center;gap:7px;font-weight:600}
+#app-floor .live{width:8px;height:8px;border-radius:50%;background:var(--ok);animation:ring 1.8s infinite}
+@keyframes ring{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--ok) 55%,transparent)}100%{box-shadow:0 0 0 9px transparent}}
+@keyframes up{from{opacity:0;transform:translateY(16px)}}
+@keyframes float{50%{transform:translateY(-9px)}}
+@keyframes sh{to{background-position:-200% 0}}
+#app-floor .in{animation:up .6s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(var(--i,0)*45ms)}
+#app-floor .hero{display:grid;grid-template-columns:1.15fr .85fr;gap:28px;align-items:center;padding:52px 0 26px}
+@media(max-width:860px){#app-floor .hero{grid-template-columns:1fr;padding-top:34px}}
+#app-floor h1{font-size:clamp(2rem,4.6vw,3.3rem);line-height:1.08;letter-spacing:-.035em;font-weight:800}
+#app-floor .sub{color:var(--mut);margin:14px 0 22px;max-width:52ch}
+#app-floor .search{display:flex;gap:8px;padding:8px;border-radius:18px}
+#app-floor .search input{flex:1;min-width:0;border:0;background:transparent;padding:10px 12px;font-size:1rem;outline:none}
+#app-floor .go{border:0;border-radius:12px;padding:10px 20px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--g1),var(--g2));box-shadow:0 6px 18px rgba(99,102,241,.4)}
+#app-floor .go:hover{filter:brightness(1.08)}
+#app-floor .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+#app-floor .chip{border:1px solid var(--line);background:var(--glass);border-radius:999px;padding:6px 13px;font-size:.84rem;transition:.2s}
+#app-floor .chip:hover{transform:translateY(-2px);border-color:var(--g1)}
+#app-floor .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:22px}
+#app-floor .stat{padding:14px 16px}
+#app-floor .stat b{font-size:1.8rem;letter-spacing:-.03em;display:block;line-height:1.1}
+#app-floor .stat span{font-size:.82rem;color:var(--mut)}
+#app-floor .map{padding:18px;animation:float 7s ease-in-out infinite}
+#app-floor .map h3{font-size:.95rem;margin-bottom:10px}
+#app-floor .mrow{display:flex;align-items:center;gap:10px;margin:8px 0}
+#app-floor .mrow small{width:58px;color:var(--mut);font-size:.75rem}
+#app-floor .cell{width:26px;height:26px;border-radius:8px;background:color-mix(in srgb,var(--c) 30%,transparent);border:1px solid color-mix(in srgb,var(--c) 70%,transparent)}
+#app-floor .ok{--c:var(--ok)}
+#app-floor .bad{--c:var(--bad)}
+#app-floor .soon{--c:var(--soon)}
+#app-floor .rec{--c:var(--rec)}
+#app-floor .cell.ok{animation:ring 2.4s infinite}
+#app-floor .legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:.75rem;color:var(--mut)}
+#app-floor .legend i{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--c);margin-right:5px}
+#app-floor .feat{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:8px 0 8px}
+@media(max-width:760px){#app-floor .feat{grid-template-columns:1fr}}
+#app-floor .feat div{padding:18px}
+#app-floor .feat b{display:block;margin-bottom:4px}
+#app-floor .feat span{color:var(--mut);font-size:.9rem}
+#app-floor section{padding:26px 0}
+#app-floor h2{font-size:1.4rem;letter-spacing:-.02em;margin-bottom:14px}
+#app-floor .two{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
+@media(max-width:860px){#app-floor .two{grid-template-columns:1fr}}
+#app-floor .panel{padding:18px}
+#app-floor .parsed{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 12px;font-size:.78rem}
+#app-floor .parsed span{padding:3px 10px;border-radius:999px;background:color-mix(in srgb,var(--g1) 14%,transparent)}
+#app-floor .res{padding:14px 16px;margin-bottom:10px;border-left:3px solid var(--rec)}
+#app-floor .res .r1{display:flex;justify-content:space-between;align-items:center;font-weight:700}
+#app-floor .conf{font-size:.8rem;padding:3px 10px;border-radius:999px;color:#fff;background:linear-gradient(135deg,var(--g1),var(--g2))}
+#app-floor .res ul{list-style:none;padding:0;margin-top:6px;color:var(--mut);font-size:.88rem}
+#app-floor .muted{color:var(--mut);font-size:.9rem}
+#app-floor .pred{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:.9rem}
+#app-floor .pred:last-child{border:0}
+#app-floor .filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px;margin-bottom:18px}
+#app-floor .filters label{display:flex;align-items:center;gap:6px;font-size:.86rem;color:var(--mut)}
+#app-floor .floor{margin-bottom:22px}
+#app-floor .floor h3{font-size:1rem;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+#app-floor .floor h3 small{color:var(--mut);font-weight:500}
+#app-floor .rooms{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+#app-floor .room{text-align:left;padding:14px;border-radius:16px;border:1px solid color-mix(in srgb,var(--c) 38%,var(--line));background:linear-gradient(160deg,color-mix(in srgb,var(--c) 13%,var(--glass)),var(--glass));backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:var(--sh);transition:transform .25s,box-shadow .25s}
+#app-floor .room:hover{transform:translateY(-5px) scale(1.015);box-shadow:0 16px 40px color-mix(in srgb,var(--c) 25%,transparent)}
+#app-floor .room b{display:flex;align-items:center;gap:8px;font-size:1.02rem}
+#app-floor .dot{width:9px;height:9px;border-radius:50%;background:var(--c)}
+#app-floor .ok .dot{animation:ring 2s infinite}
+#app-floor .room small{display:block;color:var(--c);font-weight:600;margin:2px 0 8px;font-size:.82rem}
+#app-floor .tags{display:flex;gap:5px;flex-wrap:wrap}
+#app-floor .tags span{font-size:.7rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--mut)}
+#app-floor .skel{height:98px;border-radius:16px;background:linear-gradient(90deg,var(--line) 25%,transparent 50%,var(--line) 75%);background-size:200% 100%;animation:sh 1.3s infinite}
+#app-floor .bars{display:flex;align-items:flex-end;gap:8px;height:120px}
+#app-floor .bars div{flex:1;text-align:center;font-size:.68rem;color:var(--mut)}
+#app-floor .bars i{display:block;border-radius:7px 7px 3px 3px;background:linear-gradient(180deg,var(--g2),var(--g1));min-height:3px;margin-bottom:4px;transition:height .8s}
+#app-floor .hb{margin:9px 0;font-size:.85rem}
+#app-floor .hb i{display:block;height:8px;border-radius:6px;background:linear-gradient(90deg,var(--g1),var(--g2));margin-top:4px}
+#app-floor .ana{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:900px){#app-floor .ana{grid-template-columns:1fr}}
+#app-floor .mon{grid-column:1/-1}
+#app-floor .mh{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap}
+#app-floor .mh div{display:flex;gap:8px;align-items:center}
+#app-floor .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+#app-floor .cal .dn{font-size:.72rem;color:var(--mut);text-align:center}
+#app-floor .cal button,#app-floor .cal .e{min-height:58px;border-radius:12px;border:1px solid var(--line);padding:6px;text-align:left;font-size:.74rem}
+#app-floor .cal button{transition:transform .2s}
+#app-floor .cal button:hover{transform:translateY(-3px)}
+#app-floor .cal b{display:block;font-size:.95rem}
+#app-floor .cal .e{color:var(--mut);opacity:.55}
+#app-floor .cal .td{outline:2px solid var(--g2)}
+@media(max-width:560px){#app-floor .cal button,#app-floor .cal .e{min-height:48px;font-size:.62rem;padding:4px}}
+#app-floor .ov{position:fixed;inset:0;z-index:50;display:none;place-items:center;background:rgba(8,8,20,.5);backdrop-filter:blur(6px);padding:20px}
+#app-floor .ov.on{display:grid}
+#app-floor .modal{width:min(440px,100%);padding:22px;animation:up .35s both}
+#app-floor .modal h3{font-size:1.3rem;display:flex;justify-content:space-between;align-items:center}
+#app-floor .modal dl{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin:14px 0;font-size:.9rem}
+#app-floor .modal dt{color:var(--mut)}
+#app-floor .tl{display:flex;gap:4px}
+#app-floor .tl i{flex:1;height:26px;border-radius:6px;background:color-mix(in srgb,var(--c) 45%,transparent)}
+#app-floor footer{color:var(--mut);font-size:.8rem;padding:24px 0 40px;text-align:center}
+#app-floor :focus-visible{outline:2px solid var(--g1);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){#app-floor,#app-floor *{animation:none!important;transition:none!important}}
+#app-floor .m3{align-items:stretch}
+#app-floor .m3wrap{padding:14px 14px 16px;overflow:hidden}
+#app-floor .m3stage{position:relative;height:clamp(420px,68vw,560px);overflow:hidden}
+#app-floor .m3scene{position:absolute;left:50%;top:80%;width:410px;height:110px;transform-style:preserve-3d;transform:translate(-50%,-50%) scale(var(--k,1)) rotateX(58deg) rotateZ(-38deg)}
+#app-floor .m3plate{position:absolute;left:0;top:0;width:410px;height:110px;border-radius:12px;transform-style:preserve-3d;transform:translateZ(calc(var(--i)*80px));background:color-mix(in srgb,var(--ink) 7%,transparent);border:1px solid var(--line)}
+#app-floor .m3lab{position:absolute;left:-8px;top:50%;width:70px;text-align:right;font-size:.78rem;font-weight:700;color:var(--mut);transform:translate(-100%,-50%) rotateZ(38deg) rotateX(-58deg);transform-origin:right center;white-space:nowrap}
+#app-floor .blk{position:absolute;top:24px;width:64px;height:64px;transform-style:preserve-3d;cursor:pointer;outline:none}
+#app-floor .blk .lift{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .25s cubic-bezier(.16,1,.3,1)}
+#app-floor .blk:hover .lift,#app-floor .blk:focus-visible .lift{transform:translateZ(10px)}
+#app-floor .blk.sel .lift{transform:translateZ(16px)}
+#app-floor .blk .f{position:absolute;border:1px solid rgba(255,255,255,.28)}
+#app-floor .blk .t{inset:0;transform:translateZ(24px);background:color-mix(in srgb,var(--c) 66%,var(--bg));transform-style:preserve-3d;display:grid;place-items:center}
+#app-floor .blk .fr{left:0;top:100%;width:64px;height:24px;transform-origin:top;transform:rotateX(90deg);background:color-mix(in srgb,var(--c) 72%,#000)}
+#app-floor .blk .lf{left:-24px;top:0;width:24px;height:64px;transform-origin:right;transform:rotateY(90deg);background:color-mix(in srgb,var(--c) 52%,#000)}
+#app-floor .blk .t span{font-size:.66rem;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.55);transform:translateZ(1px) rotateZ(38deg) rotateX(-58deg);white-space:nowrap}
+#app-floor .blk.sel .t{box-shadow:0 0 0 3px var(--g2),0 0 22px var(--g2)}
+#app-floor .m3hint{position:absolute;left:12px;bottom:6px;font-size:.75rem;color:var(--mut)}
+#app-floor .m3big{font-size:clamp(2.2rem,6vw,3rem);font-weight:800;letter-spacing:-.03em;line-height:1.05;font-variant-numeric:tabular-nums;margin:10px 0 2px}
+#app-floor .m3lbl{font-size:.86rem;color:var(--mut)}
+#app-floor .m3msg{margin:14px 0 10px;padding:12px 14px;border-radius:14px;border:1px dashed var(--line);font-size:.9rem}
+#app-floor .wa{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:0;border-radius:12px;padding:12px 16px;font-weight:800;color:#fff;background:#1fa855;box-shadow:0 6px 18px rgba(31,168,85,.4)}
+#app-floor .wa:hover{filter:brightness(1.07)}
+#app-floor .m3act{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+#app-floor .m3act .btn{flex:1}
+#app-floor .m3pill{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700;padding:3px 11px;border-radius:999px;border:1px solid color-mix(in srgb,var(--c) 60%,var(--line));background:color-mix(in srgb,var(--c) 16%,transparent)}
+#app-floor{position:relative;isolation:isolate}
+#app-floor .top{top:calc(var(--nav-h) + 8px)}
+
+/* Squad Button Styles */
+#app-floor .btn-squad {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 14px;
+  padding: 10px 16px;
+  background: #25d366;
+  color: white;
+  font-weight: 700;
+  border-radius: 12px;
+  border: 0;
+  box-shadow: 0 4px 14px rgba(37, 211, 102, 0.4);
+  transition: filter 0.2s, transform 0.2s;
+}
+#app-floor .btn-squad:hover { filter: brightness(1.1); transform: translateY(-2px); }
+
+/* ===== Attendance Tracker (scoped) ===== */
+#app-att .chart-box{position:relative;height:300px;width:100%}
+#app-att .chart-fallback{color:var(--text-muted);font-size:.9rem;padding:1rem 0}
+#app-att .chart-details{margin-top:1rem;border-top:1px solid var(--border)}
+#app-att .cd-row{display:flex;align-items:center;gap:.6rem;padding:.55rem 0;border-bottom:1px solid var(--border);font-size:.85rem}
+#app-att .cd-row>i{width:10px;height:10px;border-radius:50%;flex:none}
+#app-att .cd-main{flex:1;min-width:0;display:flex;flex-direction:column}
+#app-att .cd-main small,#app-att .cd-num small{color:var(--text-muted);font-size:.75rem}
+#app-att .cd-main small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#app-att .cd-num{text-align:right;display:flex;flex-direction:column;white-space:nowrap}
+#app-att .cd-total{border-bottom:0;font-weight:600}
+#app-att{
+      --primary: #16294f;
+      --primary-light: #2f5bd2;
+      --on-accent: #ffffff;
+      --bg: #f4f5f7;
+      --card-bg: #ffffff;
+      --text: #182033;
+      --text-muted: #667085;
+      --border: #e1e5ec;
+      --row-hover: #f8f9fb;
+      --danger: #c93b3b;
+      --success: #1f8a5f;
+      --warning: #a86a10;
+    }
+:root[data-theme="dark"] #app-att{
+      --primary: #dbe4ff;
+      --primary-light: #7aa2ff;
+      --on-accent: #0f1521;
+      --bg: #0f1521;
+      --card-bg: #171f2e;
+      --text: #e5e9f2;
+      --text-muted: #8b96ab;
+      --border: #28324a;
+      --row-hover: #1b2436;
+      --danger: #f0736f;
+      --success: #4cc38f;
+      --warning: #e0a44a;
+    }
+#app-att,#app-att *{ box-sizing: border-box; margin: 0; padding: 0; font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif; }
+#app-att{
+      background-color: var(--bg); color: var(--text);
+      display: flex; flex-direction: column; min-height: calc(100vh - var(--nav-h));
+      font-variant-numeric: tabular-nums; line-height: 1.5;
+      transition: background-color 0.2s, color 0.2s;
+    }
+#app-att :focus-visible{ outline: 2px solid var(--primary-light); outline-offset: 2px; }
+#app-att header{
+      background-color: var(--card-bg); color: var(--text);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+    }
+#app-att header h1{ font-size: 1.25rem; font-weight: 600; color: var(--primary); letter-spacing: -0.01em; }
+#app-att .subtitle{ color: var(--text-muted); font-size: 0.85rem; margin-top: 0.1rem; }
+#app-att .container{ max-width: 1280px; margin: 1.75rem auto; padding: 0 1.5rem; width: 100%; }
+#app-att .controls{
+      background-color: var(--card-bg); padding: 1rem 1.25rem; border-radius: 10px;
+      border: 1px solid var(--border); margin-bottom: 1.5rem; display: flex; gap: 1.25rem; flex-wrap: wrap; align-items: flex-end;
+    }
+#app-att .control-group{ display: flex; flex-direction: column; gap: 0.35rem; }
+#app-att .control-group label{ font-size: 0.82rem; font-weight: 500; color: var(--text-muted); }
+#app-att input[type="date"],#app-att select,#app-att input[type="number"]{
+      padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 6px;
+      font-size: 0.92rem; background-color: var(--card-bg); color: var(--text);
+      transition: border-color 0.15s;
+    }
+#app-att input[type="date"]:hover,#app-att select:hover,#app-att input[type="number"]{ border-color: var(--text-muted); }
+#app-att input[type="number"]{ width: 68px; padding: 0.35rem; text-align: center; }
+:root[data-theme="dark"] #app-att input[type="date"]{ color-scheme: dark; }
+#app-att .btn{
+      padding: 0.55rem 1.25rem; background-color: var(--primary-light); color: var(--on-accent);
+      border: 1px solid transparent; border-radius: 6px; font-size: 0.92rem; font-weight: 500; cursor: pointer;
+      transition: filter 0.15s, border-color 0.15s;
+    }
+#app-att .btn:hover{ filter: brightness(1.1); }
+#app-att .btn-outline{ background-color: transparent; border-color: var(--border); color: var(--text); }
+#app-att .btn-outline:hover{ filter: none; border-color: var(--text-muted); }
+#app-att .dashboard-grid{ display: grid; grid-template-columns: 1fr 340px; gap: 1.5rem; margin-bottom: 1.5rem; align-items: start; }
+@media (max-width: 1024px){#app-att .dashboard-grid{ grid-template-columns: 1fr; }}
+#app-att .card{
+      background-color: var(--card-bg); border-radius: 10px; border: 1px solid var(--border);
+      padding: 1.25rem; overflow-x: auto;
+    }
+#app-att .card-title{ font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--primary); }
+#app-att table{ width: 100%; border-collapse: collapse; font-size: 0.9rem; text-align: center; }
+#app-att th,#app-att td{ border: 0; border-bottom: 1px solid var(--border); padding: 0.75rem 0.5rem; vertical-align: middle; }
+#app-att th{ color: var(--text-muted); font-weight: 500; font-size: 0.8rem; white-space: nowrap; }
+#app-att tbody tr:last-child td{ border-bottom: 0; }
+#app-att tbody tr:hover{ background-color: var(--row-hover); }
+#app-att td.left-align{ text-align: left; min-width: 200px; }
+#app-att td.left-align strong{ font-weight: 600; }
+#app-att td.left-align small{ color: var(--text-muted); font-size: 0.8rem; }
+#app-att .od-input{ border-color: var(--primary-light) !important; color: var(--primary-light); font-weight: 600; }
+#app-att .irreversible-alert,#app-att .status-safe,#app-att .status-warn{
+      display: inline-block; padding: 0.15rem 0.65rem; border-radius: 999px;
+      font-size: 0.8rem; font-weight: 600; white-space: nowrap;
+    }
+#app-att .status-safe{ color: var(--success); background: color-mix(in srgb, var(--success) 13%, transparent); }
+#app-att .status-warn{ color: var(--warning); background: color-mix(in srgb, var(--warning) 14%, transparent); }
+#app-att .irreversible-alert{ background-color: var(--danger); color: #fff; }
+#app-att .bunk-budget{ font-weight: 600; color: var(--primary-light); }
+#app-att #calculatorBody td[id^="percent_"]{ font-weight: 600; }
+#app-att .chatbot-fab{
+      position: fixed; bottom: 1.75rem; right: 1.75rem; width: 52px; height: 52px;
+      background-color: var(--primary-light); color: var(--on-accent); border-radius: 50%;
+      display: flex; justify-content: center; align-items: center; font-size: 1.3rem;
+      cursor: pointer; box-shadow: 0 2px 10px rgba(15,21,33,0.25); transition: transform 0.15s; z-index: 1000;
+    }
+#app-att .chatbot-fab:hover{ transform: scale(1.06); }
+#app-att .chat-window{
+      position: fixed; bottom: 5.5rem; right: 1.75rem; width: min(350px, calc(100vw - 2rem)); height: 450px;
+      background-color: var(--card-bg); border-radius: 12px; box-shadow: 0 10px 30px rgba(15,21,33,0.2);
+      border: 1px solid var(--border); display: flex; flex-direction: column;
+      transform: translateY(12px); opacity: 0; pointer-events: none; transition: transform 0.2s ease, opacity 0.2s ease; z-index: 999;
+    }
+#app-att .chat-window.active{ transform: translateY(0); opacity: 1; pointer-events: all; }
+#app-att .chat-header{
+      background-color: var(--card-bg); color: var(--primary); padding: 0.9rem 1rem;
+      border-bottom: 1px solid var(--border); border-radius: 12px 12px 0 0;
+      font-weight: 600; display: flex; justify-content: space-between;
+    }
+#app-att .chat-close{ cursor: pointer; color: var(--text-muted); }
+#app-att .chat-close:hover{ color: var(--text); }
+#app-att .chat-body{ flex: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.7rem; background-color: var(--bg); }
+#app-att .msg{ max-width: 82%; padding: 0.55rem 0.9rem; border-radius: 12px; font-size: 0.9rem; line-height: 1.45; }
+#app-att .msg.bot{ background-color: var(--card-bg); color: var(--text); border: 1px solid var(--border); align-self: flex-start; border-bottom-left-radius: 3px; }
+#app-att .msg.user{ background-color: var(--primary-light); color: var(--on-accent); align-self: flex-end; border-bottom-right-radius: 3px; }
+#app-att .chat-input-area{
+      padding: 0.75rem; border-top: 1px solid var(--border); display: flex; gap: 0.5rem; background-color: var(--card-bg); border-radius: 0 0 12px 12px;
+    }
+#app-att .chat-input-area input{ flex: 1; padding: 0.55rem 0.9rem; border: 1px solid var(--border); border-radius: 20px; background-color: var(--bg); color: var(--text); }
+#app-att .chat-input-area button{ background-color: var(--primary-light); color: var(--on-accent); border: none; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 500; cursor: pointer; }
+#app-att .bar{ position: relative; width: 64px; height: 4px; margin: 0.35rem auto 0; background: var(--border); border-radius: 2px; }
+#app-att .bar span{ display: block; height: 100%; background: currentColor; border-radius: 2px; }
+#app-att .bar em{ position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--text-muted); }
+#app-att .quick{ display: flex; gap: 0.35rem; margin-top: 0.4rem; }
+#app-att .mini{ font-size: 0.75rem; padding: 0.15rem 0.55rem; border: 1px solid var(--border); border-radius: 5px; background: transparent; color: var(--text-muted); cursor: pointer; }
+#app-att .mini:hover{ color: var(--text); border-color: var(--text-muted); }
+#app-att .advisor-summary{ font-size: 0.95rem; }
+#app-att .advisor-list{ display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem; margin-top: 0.9rem; }
+#app-att .adv-item{ border: 1px solid var(--border); border-left: 3px solid var(--success); border-radius: 8px; padding: 0.75rem 0.9rem; font-size: 0.88rem; }
+#app-att .adv-item.warn{ border-left-color: var(--warning); }
+#app-att .adv-item.bad{ border-left-color: var(--danger); }
+#app-att .adv-item h3{ font-size: 0.9rem; font-weight: 600; margin-bottom: 0.25rem; display: flex; justify-content: space-between; gap: 0.5rem; }
+#app-att .adv-item .keep{ color: var(--primary-light); white-space: nowrap; }
+@media (max-width: 600px){#app-att header{ padding: 0.85rem 1rem; }
+#app-att .container{ padding: 0 1rem; }}
+@media (prefers-reduced-motion: reduce){#app-att,#app-att *{ transition: none !important; }}
+</style>
+</head>
+<body>
+<nav class="site-nav" aria-label="Main">
+  <div class="site-brand"><div class="site-mark"></div><span>Campus Hub</span></div>
+  <div class="site-tabs">
+    <a href="#/floor" data-tab="floor">Floor Manager</a>
+    <a href="#/attendance" data-tab="attendance">Attendance</a>
+  </div>
+  <button class="site-theme" id="siteTheme" type="button">Dark mode</button>
+</nav>
+
+<div class="app" id="app-floor">
+
+<header class="top glass">
+  <div class="brand"><div class="mark"></div>Floor Manager</div>
+  <span class="pill"><i class="live"></i><span id="clock">Live</span></span>
+  <select id="day" aria-label="Day"></select>
+  <select id="time" aria-label="Time"></select>
+  
+</header>
+
+<main class="wrap">
+  <div class="hero">
+    <div>
+      <h1 class="in">Find an empty room in seconds</h1>
+      <p class="sub in" style="--i:1">Ask in plain English. We check every timetable and rank the rooms that stay free for as long as you need.</p>
+      <div class="search glass in" style="--i:2">
+        <input id="q" placeholder="I need an AC room on the ground floor for 2 hours" aria-label="Describe the room you need">
+        <button class="go" id="go">Find rooms</button>
+      </div>
+      <div class="chips in" style="--i:3" id="chips"></div>
+      <div class="stats" id="stats"></div>
+    </div>
+    <div class="map glass in" style="--i:2"><h3>Live floor map</h3><div id="map"></div>
+      <div class="legend"><span class="ok"><i></i>Available</span><span class="bad"><i></i>Occupied</span><span class="soon"><i></i>Reserved soon</span><span class="rec"><i></i>Recommended</span></div></div>
+  </div>
+
+  <div class="feat">
+    <div class="glass in" style="--i:4"><b>Real-time availability</b><span>Status follows the clock and your timetable data.</span></div>
+    <div class="glass in" style="--i:5"><b>Natural language search</b><span>Duration, floor, features and time, all from one sentence.</span></div>
+    <div class="glass in" style="--i:6"><b>Vacancy prediction</b><span>See which rooms will stay empty the longest.</span></div>
+  </div>
+
+
+  <section id="map3d">
+    <h2>3D building map</h2>
+    <div class="two m3">
+      <div class="glass m3wrap">
+        <div class="m3stage" id="m3stage"><div class="m3scene" id="m3scene"></div><div class="m3hint">Tap any room block</div></div>
+        <div class="legend"><span class="ok"><i></i>Available</span><span class="bad"><i></i>Occupied</span><span class="soon"><i></i>Reserved soon</span><span class="rec"><i></i>Recommended / yours</span></div>
+      </div>
+      <div class="glass panel" id="m3panel"></div>
+    </div>
+  </section>
+
+  <section id="find">
+    <h2>AI room finder</h2>
+    <div class="two">
+      <div class="glass panel" id="ai"></div>
+      <div class="glass panel"><b>Likely to stay vacant longest</b><div id="pred" style="margin-top:8px"></div></div>
+    </div>
+  </section>
+
+  <section id="floors">
+    <h2>Floors</h2>
+    <div class="filters glass">
+      <select id="f-floor" aria-label="Floor"></select>
+      <label>Min seats <select id="f-cap"><option value="0">Any</option><option>20</option><option>30</option><option>40</option><option>60</option></select></label>
+      <label><input type="checkbox" id="f-ac"> AC only</label>
+      <label><input type="checkbox" id="f-proj"> Projector</label>
+      <label>Free for <select id="f-dur"><option value="1">1 period</option><option value="2">2 periods</option><option value="3">3 periods</option><option value="4">4 periods</option></select></label>
+      <label><input type="checkbox" id="f-avail"> Only rooms free for that long</label>
+      <label class="btn">Load dataset (JSON)<input type="file" id="up" accept=".json" hidden></label>
+    </div>
+    <div id="floorGrid"></div>
+  </section>
+
+  <section id="analytics">
+    <h2>Analytics</h2>
+    <div class="ana" id="ana"></div>
+  </section>
+  <footer>Timetables: SEEE odd semester 2026-27, 50-minute periods. Room details other than location are placeholders. Use "Load dataset" to swap in another file.</footer>
+</main>
+
+<div class="ov" id="ov"><div class="modal glass" id="modal"></div></div>
+
+
+</div>
+
+<div class="app" id="app-att">
+
+
+  <header>
+    <div>
+      <h1>Attendance Tracker</h1>
+      <div class="subtitle">SRM IST attendance planning, OD simulator and AI advisor</div>
+    </div>
+    
+  </header>
+
+  <div class="container">
+    <div class="controls">
+      <div class="control-group">
+        <label for="classSelect">Select Class / Section</label>
+        <select id="classSelect" onchange="initializeSubjects()">
+          <option value="I_CSE_CYBER" selected>I CSE - Cybersecurity (Sem I)</option>
+          <option value="IV_ECE_B">IV ECE - B (Sem VII)</option>
+          <option value="IV_ECE_A">IV ECE - A (Sem VII)</option>
+          <option value="III_ECE_A">III ECE - A (Sem V)</option>
+          <option value="III_ECE_B">III ECE - B (Sem V)</option>
+          <option value="III_ECE_DS">III ECE - DS (Sem V)</option>
+          <option value="II_ECE_DS_A">II ECE - DS A (Sem III)</option>
+          <option value="II_ECE_DS_B">II ECE - DS B (Sem III)</option>
+          <option value="III_BME">III BME (Sem V)</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label for="targetDate">Semester End Date</label>
+        <input type="date" id="targetDate" onchange="calculateAttendance()">
+      </div>
+      <div class="control-group">
+        <label for="targetPct">Target attendance (%)</label>
+        <input type="number" id="targetPct" min="1" max="100" value="75" oninput="onTargetChange()">
+      </div>
+      <button class="btn" onclick="calculateAttendance()">Update plan</button>
+    </div>
+
+    <div class="dashboard-grid">
+      <!-- Data Table -->
+      <div class="card">
+        <div class="card-title">Attendance Dashboard & OD Simulator</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Subject</th>
+              <th>Conducted</th>
+              <th>Attended</th>
+              <th style="color: var(--primary-light);">OD / ML</th>
+              <th>Current %</th>
+              <th>Safe Skips Left</th>
+              <th>Remaining (Est)</th>
+              <th>To hit target</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="calculatorBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Chart Container -->
+      <div class="card">
+        <div class="card-title">Overall Health Map</div>
+        <div class="chart-box"><canvas id="healthChart"></canvas></div>
+        <div id="chartDetails" class="chart-details"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Smart attendance advisor</div>
+      <div class="advisor-summary" id="advisorSummary">Set a semester end date to see your plan.</div>
+      <div class="advisor-list" id="advisorList"></div>
+    </div>
+  </div>
+
+  <!-- Chatbot Widget -->
+  <div class="chatbot-fab" onclick="toggleChat()">💬</div>
+  <div class="chat-window" id="chatWidget">
+    <div class="chat-header">
+      <span>Attendance Advisor AI</span>
+      <span class="chat-close" onclick="toggleChat()">✕</span>
+    </div>
+    <div class="chat-body" id="chatBody">
+      <div class="msg bot">Hi Robin! I'm your Attendance Advisor. Ask me things like: <i>"If I skip 2 classes of Physics, will I drop below 75%?"</i> or <i>"What should I maintain?"</i></div>
+    </div>
+    <div class="chat-input-area">
+      <input type="text" id="chatInput" placeholder="Ask about your attendance..." onkeypress="handleChatEnter(event)">
+      <button onclick="processUserMsg()">Send</button>
+    </div>
+  </div>
+
+  
+</div>
+
+<script>
+(function(){
+
+let D = {
+  rooms: [
+    { id:"IST 101", floor:"Ground", ac:true, capacity:60, projector:true, wifi:true },
+    { id:"IST 102", floor:"Ground", ac:true, capacity:30, projector:false, wifi:true },
+    { id:"IST 104", floor:"Ground", ac:true, capacity:20, projector:true, wifi:true },
+    { id:"IST 107", floor:"Ground", ac:true, capacity:25, projector:true, wifi:true },
+    { id:"IST 108", floor:"Ground", ac:false, capacity:30, projector:false, wifi:true },
+    { id:"IST 211", floor:"2nd", ac:false, capacity:60, projector:true, wifi:false },
+    { id:"IST 225", floor:"2nd", ac:false, capacity:60, projector:true, wifi:false },
+    { id:"IST 227", floor:"2nd", ac:false, capacity:60, projector:true, wifi:true },
+    { id:"IST 309", floor:"3rd", ac:false, capacity:30, projector:false, wifi:true },
+    { id:"IST 401", floor:"4th", ac:false, capacity:60, projector:true, wifi:true },
+    { id:"IST 411", floor:"4th", ac:false, capacity:60, projector:true, wifi:true },
+    { id:"IST 416", floor:"4th", ac:false, capacity:60, projector:true, wifi:true },
+    { id:"IST 518", floor:"5th", ac:false, capacity:60, projector:true, wifi:true },
+    { id:"IST 519", floor:"5th", ac:false, capacity:60, projector:true, wifi:true },
+    { id:"IST 602", floor:"6th", ac:true, capacity:80, projector:true, wifi:true },
+    { id:"IST 618", floor:"6th", ac:true, capacity:40, projector:true, wifi:true },
+    { id:"IST 625", floor:"6th", ac:false, capacity:60, projector:true, wifi:true }
+  ],
+  // Odd Semester 2026-27. Tokens per period 1-9: V = section's own room, . = no IST room used, 107+309 = those rooms (labs or slot rooms)
+  tt: {
+    "II BME": { v:"IST 602", grid:{
+      Monday:"V V V V . 107+309 107+309 . .", Tuesday:"V V V V . . . . .", Wednesday:"V V V . . . V . .",
+      Thursday:"V V V V . . . 107+309 107+309", Friday:"V V V V . . . V V" } },
+    "II ECE-DS A": { v:"IST 416", grid:{
+      Monday:"V V V V . 602 602 309+107 309+107", Tuesday:"V V V V . 602 . . .", Wednesday:"V V V V . . . . .",
+      Thursday:"V V V V . 309+107 309+107 . .", Friday:"V V V V . . . . ." } },
+    "II ECE-DS B": { v:"IST 411", grid:{
+      Monday:". . 309+107 309+107 . V V V V", Tuesday:"309+107 309+107 . . . V V V V", Wednesday:"401 . . . . V V V V",
+      Thursday:"401 401 . . . V V V V", Friday:". . . . . V V V V" } },
+    "III BME": { v:"IST 211", grid:{
+      Monday:"625 625 107 107 . V V V V", Tuesday:"108 108 625 . . V V V V", Wednesday:". . . . . V V V V",
+      Thursday:". . . 108 . V V V V", Friday:"108 . . . . V V V V" } },
+    "III ECE-A": { v:"IST 518", grid:{
+      Monday:"V V V V . 625 625 . .", Tuesday:"V V V V . . 625 . .", Wednesday:"V V V V . . . 108+309 108+309",
+      Thursday:"V V V V . . . . .", Friday:"V V V V . 108+309 108+309 . ." } },
+    "III ECE-B": { v:"IST 518", grid:{
+      Monday:"108+309 108+309 . . . V V V V", Tuesday:"625 625 . . . V V V V", Wednesday:"625 . . . . V V V V",
+      Thursday:"108+309 108+309 . . . V V V V", Friday:". . . . . V V V V" } },
+    "III ECE-DS": { v:"IST 519", grid:{
+      Monday:"V V V V . . . . .", Tuesday:"V V V V . 108+107 108+107 . .", Wednesday:"V V V V . . . 625 625",
+      Thursday:"V V V V . . . . .", Friday:"V V V V . 625 . 108+107 108+107" } },
+    "IV ECE-A": { v:"IST 225", grid:{
+      Monday:"V . V V . . . . .", Tuesday:"V V V V . . . . .", Wednesday:"V 108 V V . . . . .",
+      Thursday:"V V V V . . . . .", Friday:"V V V V . . . . ." } },
+    "IV ECE-B": { v:"IST 227", grid:{
+      Monday:"V V V V . . . . .", Tuesday:"V V V V . . . . .", Wednesday:"V V V V . . . . .",
+      Thursday:"V V 108 V . . . . .", Friday:"V V V . . . . . ." } }
+  }
+};
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => '&#' + c.charCodeAt(0) + ';');
+const PT = ['9:00 AM', '9:50 AM', '10:50 AM', '11:40 AM', '12:30 PM', '1:20 PM', '2:10 PM', '3:10 PM', '4:00 PM', '4:50 PM'];
+const PM = [540, 590, 650, 700, 750, 800, 850, 910, 960, 1010];
+const lbl = s => PT[Math.min(9, Math.max(0, s))];
+const slotOf = h => { const m = h * 60; let k = 0; PM.forEach((t, i) => { if (m >= t) k = i; }); return k; };
+const floors = () => [...new Set(D.rooms.map(r => r.floor))];
+const fname = f => f === 'Ground' ? 'Ground floor' : f + ' floor';
+const days = () => [...new Set(Object.values(D.tt).flatMap(c => Object.keys(c.grid)))];
+const S = { day: 'Monday', slot: 0, live: true, loading: true, ai: null, month: new Date(new Date().getFullYear(), new Date().getMonth(), 1) };
+
+function liveNow() {
+  const d = new Date(), name = d.toLocaleDateString('en-US', { weekday: 'long' });
+  S.day = days().includes(name) ? name : days()[0];
+  S.slot = Math.min(8, slotOf(d.getHours() + d.getMinutes() / 60));
+}
+
+function occ(r, day, s) {
+  for (const k in D.tt) {
+    const c = D.tt[k], g = c.grid[day]; if (!g) continue;
+    const t = (Array.isArray(g) ? g : g.split(' '))[s];
+    if (!t || t === '.') continue;
+    if (t === 'V' ? c.v === r.id : t.split('+').some(n => 'IST ' + n === r.id)) return k;
+  }
+  return null;
+}
+function freeRun(r, day, s) { let n = 0; while (s + n < 9 && !occ(r, day, s + n)) n++; return n; }
+function status(r) {
+  const o = occ(r, S.day, S.slot);
+  if (o) return { k: 'bad', t: 'Occupied', by: o };
+  for (let i = 1; i <= 2 && S.slot + i < 9; i++) if (occ(r, S.day, S.slot + i)) return { k: 'soon', t: 'Reserved soon' };
+  return { k: 'ok', t: 'Available' };
+}
+const recIds = () => new Set(S.ai && S.ai.res ? S.ai.res.map(x => x.r.id) : []);
+function view(r) {
+  const s = status(r);
+  if (s.k !== 'bad' && recIds().has(r.id)) return { ...s, k: 'rec', t: 'Recommended' };
+  return s;
+}
+
+/* ---------- AI: understand the request, then rank rooms ---------- */
+async function getSample() { try { return typeof claude !== 'undefined' ? await claude.use('sample') : null; } catch (e) { return null; } }
+const FW = { second: '2nd', fourth: '4th', fifth: '5th', sixth: '6th', ground: 'Ground' };
+function localParse(q) {
+  q = q.toLowerCase();
+  const p = { floor: null, ac: null, minCapacity: null, projector: null, wifi: null, durationHours: null, startHour: null, endHour: null, quiet: /quiet|silent|peace/.test(q) };
+  if (/non[- ]?ac/.test(q)) p.ac = false; else if (/\bac\b|air.?condition/.test(q)) p.ac = true;
+  if (/projector/.test(q)) p.projector = true;
+  if (/wi-?fi/.test(q)) p.wifi = true;
+  let m = q.match(/(\d+)\s*(hour|hr)/); if (m) p.durationHours = +m[1];
+  m = q.match(/(\d+)\s*(student|people|person|seat)/); if (m) p.minCapacity = +m[1];
+  for (const f of floors()) if (q.includes(f.toLowerCase())) p.floor = f;
+  for (const w in FW) if (q.includes(w) && floors().includes(FW[w])) p.floor = FW[w];
+  const t = [...q.matchAll(/(\d{1,2})(?::\d\d)?\s*(am|pm)/g)].map(x => (+x[1] % 12) + (x[2] === 'pm' ? 12 : 0));
+  if (t[0] != null) p.startHour = t[0];
+  if (t[1] != null) p.endHour = t[1];
+  return p;
+}
+function rank(p) {
+  const s0 = p.startHour != null ? slotOf(p.startHour) : S.slot;
+  const dur = p.durationHours || (p.endHour != null && p.startHour != null ? Math.max(1, slotOf(p.endHour) - slotOf(p.startHour)) : 1) || 1;
+  return D.rooms.map(r => {
+    const run = freeRun(r, S.day, s0);
+    if (run < dur) return null;
+    let c = 100;
+    if (p.floor && r.floor !== p.floor) c -= 25;
+    if (p.ac != null && r.ac !== p.ac) c -= 30;
+    if (p.projector && !r.projector) c -= 20;
+    if (p.wifi && !r.wifi) c -= 15;
+    if (p.minCapacity) { if (r.capacity < p.minCapacity) c -= 40; else c -= Math.min(8, (r.capacity - p.minCapacity) / 10); }
+    if (p.quiet && r.capacity > 40) c -= 6;
+    c += Math.min(run - dur, 4) * 0.5;
+    return { r, run, s0, dur, c: Math.max(0, Math.min(99, Math.round(c))) };
+  }).filter(x => x && x.c >= 50).sort((a, b) => b.c - a.c || b.run - a.run).slice(0, 5);
+}
+async function ask(text) {
+  if (!text.trim()) return;
+  $('q').value = text; S.ai = { loading: true }; render();
+  let p = null, src = 'Built-in parser';
+  const sm = await getSample();
+  if (sm) {
+    try {
+      p = await sm.json('Extract room-search requirements from the student request. Return only JSON: {"floor":"one of ' + floors().join('|') + ' or null","ac":true|false|null,"minCapacity":number|null,"projector":true|false|null,"wifi":true|false|null,"durationHours":number|null,"startHour":0-23 or null,"endHour":0-23 or null,"quiet":true|false}. "after 4 PM" means startHour 16. Request: ' + text, { cache: false });
+      src = 'Understood by Claude';
+    } catch (e) { p = null; }
+  }
+  if (!p) p = localParse(text);
+  S.ai = { q: text, p, src, res: rank(p) }; render();
+  $('find').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ---------- Rendering ---------- */
+function renderStats() {
+  const av = D.rooms.filter(r => !occ(r, S.day, S.slot)).length, tot = D.rooms.length;
+  $('stats').innerHTML = [[av, 'Available now'], [tot - av, 'Occupied'], [tot, 'Total rooms']]
+    .map((x, i) => `<div class="stat glass in" style="--i:${i + 4}"><b>${x[0]}</b><span>${x[1]}</span></div>`).join('');
+}
+function renderMap() {
+  $('map').innerHTML = floors().slice().reverse().map(f => `<div class="mrow"><small>${esc(f)}</small>${D.rooms.filter(r => r.floor === f)
+    .map((r, i) => `<div class="cell ${view(r).k}" title="${esc(r.id)}" style="animation-delay:${i * 200}ms"></div>`).join('')}</div>`).join('');
+}
+function renderAI() {
+  const a = S.ai, box = $('ai');
+  if (!a) { box.innerHTML = '<b>Recommended rooms</b><p class="muted" style="margin-top:8px">Describe what you need above, or tap a quick search.</p>'; return; }
+  if (a.loading) { box.innerHTML = '<b>Understanding your request...</b><div class="skel" style="margin-top:12px"></div><div class="skel" style="margin-top:10px"></div>'; return; }
+  const p = a.p, ch = [];
+  if (p.floor) ch.push(fname(p.floor)); if (p.ac != null) ch.push(p.ac ? 'AC' : 'Non-AC');
+  if (p.minCapacity) ch.push(p.minCapacity + '+ seats'); if (p.projector) ch.push('Projector'); if (p.wifi) ch.push('Wi-Fi');
+  if (p.durationHours) ch.push(p.durationHours + ' hours'); if (p.startHour != null) ch.push('from ' + lbl(slotOf(p.startHour)));
+  if (p.endHour != null) ch.push('until ' + lbl(slotOf(p.endHour))); if (p.quiet) ch.push('Quiet (smaller rooms)');
+  box.innerHTML = `<b>Recommended rooms</b><div class="parsed">${ch.map(c => `<span>${esc(c)}</span>`).join('')}<span>${a.src}</span></div>` +
+    (a.res.length ? a.res.map((x, i) => `<div class="res glass in" style="--i:${i}"><div class="r1"><span>Room ${esc(x.r.id)}</span><span class="conf">${x.c}% match</span></div><ul>
+      <li>${fname(x.r.floor)}</li><li>${x.r.ac ? 'AC available' : 'Non-AC'}, capacity ${x.r.capacity}${x.r.projector ? ', projector' : ''}${x.r.wifi ? ', Wi-Fi' : ''}</li>
+      <li>Free for ${x.run} period${x.run > 1 ? 's' : ''}, from ${lbl(x.s0)} to ${lbl(x.s0 + x.run)}</li></ul></div>`).join('')
+      : '<p class="muted">No room is free for the whole time you asked. Try a shorter duration or a different time.</p>');
+}
+function renderPred() {
+  const list = D.rooms.map(r => ({ r, run: freeRun(r, S.day, S.slot) })).filter(x => x.run > 0).sort((a, b) => b.run - a.run).slice(0, 5);
+  $('pred').innerHTML = list.length ? list.map(x => `<div class="pred"><span>${esc(x.r.id)}</span><span class="muted">${x.run >= 9 - S.slot ? 'Free all day' : 'Free until ' + lbl(S.slot + x.run)}</span></div>`).join('')
+    : '<p class="muted">Every room is in use right now.</p>';
+}
+function passes(r) {
+  const F = { floor: $('f-floor').value, cap: +$('f-cap').value, dur: +$('f-dur').value };
+  return (F.floor === 'All' || r.floor === F.floor) && r.capacity >= F.cap && (!$('f-ac').checked || r.ac) && (!$('f-proj').checked || r.projector)
+    && (!$('f-avail').checked || freeRun(r, S.day, S.slot) >= F.dur);
+}
+function renderFloors() {
+  if (S.loading) { $('floorGrid').innerHTML = '<div class="rooms">' + '<div class="skel"></div>'.repeat(8) + '</div>'; return; }
+  let n = 0;
+  $('floorGrid').innerHTML = floors().map(f => {
+    const rs = D.rooms.filter(r => r.floor === f && passes(r)); if (!rs.length) return '';
+    return `<div class="floor"><h3>${fname(f)} <small>${rs.length} room${rs.length > 1 ? 's' : ''}</small></h3><div class="rooms">${rs.map(r => {
+      const v = view(r);
+      return `<button class="room ${v.k} in" style="--i:${n++}" data-id="${esc(r.id)}"><b><i class="dot"></i>${esc(r.id)}</b><small>${v.t}</small>
+        <div class="tags"><span>${r.ac ? 'AC' : 'Non-AC'}</span><span>${r.capacity} seats</span>${r.projector ? '<span>Projector</span>' : ''}${r.wifi ? '<span>Wi-Fi</span>' : ''}</div></button>`;
+    }).join('')}</div></div>`;
+  }).join('') || '<p class="muted">No rooms match these filters.</p>';
+}
+function renderAna() {
+  const perSlot = [...Array(9)].map((_, s) => D.rooms.filter(r => occ(r, S.day, s)).length), max = Math.max(1, ...perSlot);
+  const used = D.rooms.map(r => ({ id: r.id, n: days().reduce((t, d) => t + [...Array(9)].filter((_, s) => occ(r, d, s)).length, 0) })).sort((a, b) => b.n - a.n).slice(0, 5);
+  const um = Math.max(1, used[0] ? used[0].n : 1);
+  const fl = floors().map(f => { const rs = D.rooms.filter(r => r.floor === f); return { f, u: Math.round(100 * rs.reduce((t, r) => t + [...Array(9)].filter((_, s) => occ(r, S.day, s)).length, 0) / (rs.length * 9)) }; });
+  $('ana').innerHTML = `<div class="glass panel"><b>Peak occupancy hours</b><p class="muted">${S.day}, rooms in use by period</p><div class="bars" style="margin-top:12px">${perSlot.map((n, s) => `<div><i style="height:${Math.round(n / max * 100)}px"></i>${s + 1}</div>`).join('')}</div></div>
+    <div class="glass panel"><b>Most used rooms</b><p class="muted">Class periods across the week</p>${used.map(u => `<div class="hb">${esc(u.id)} <span class="muted">${u.n} periods</span><i style="width:${Math.max(3, u.n / um * 100)}%"></i></div>`).join('')}</div>
+    <div class="glass panel"><b>Floor utilization</b><p class="muted">${S.day}</p>${fl.map(x => `<div class="hb">${fname(x.f)} <span class="muted">${x.u}%</span><i style="width:${Math.max(3, x.u)}%"></i></div>`).join('')}</div>`;
+}
+const util = d => {
+  if (!days().includes(d)) return null;
+  const n = D.rooms.reduce((t, r) => t + [...Array(9)].filter((_, s) => occ(r, d, s)).length, 0);
+  return Math.round(100 * n / (D.rooms.length * 9));
+};
+function renderMonth() {
+  const m = S.month, y = m.getFullYear(), mo = m.getMonth(), first = (m.getDay() + 6) % 7, n = new Date(y, mo + 1, 0).getDate(), now = new Date();
+  let cells = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(x => `<div class="dn">${x}</div>`).join('') + '<div></div>'.repeat(first);
+  for (let d = 1; d <= n; d++) {
+    const name = new Date(y, mo, d).toLocaleDateString('en-US', { weekday: 'long' }), u = util(name);
+    const td = now.getFullYear() === y && now.getMonth() === mo && now.getDate() === d ? ' td' : '';
+    cells += u == null ? `<div class="e${td}"><b>${d}</b>No timetable</div>`
+      : `<button class="${td}" data-d="${name}" style="background:color-mix(in srgb,var(--g1) ${Math.round(8 + u * 0.6)}%,transparent)"><b>${d}</b>${u}% used</button>`;
+  }
+  $('ana').insertAdjacentHTML('beforeend', `<div class="glass panel mon"><div class="mh"><div><b>Month view</b><span class="muted">${m.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span></div>
+    <div><button class="btn" data-m="-1" aria-label="Previous month">Prev</button><button class="btn" data-m="1" aria-label="Next month">Next</button></div></div>
+    <p class="muted" style="margin-bottom:10px">Room usage per day, projected from the weekly timetable. Darker means busier. Tap a day to see its rooms.</p><div class="cal">${cells}</div></div>`);
+}
+function render() {
+  renderStats(); renderMap(); renderAI(); renderPred(); renderFloors(); renderAna(); renderMonth(); render3D();
+  $('clock').textContent = (S.live ? 'Live, ' : '') + S.day + ' ' + lbl(S.slot);
+  $('day').value = S.day; $('time').value = S.live ? 'live' : S.slot;
+}
+function showRoom(id) {
+  const r = D.rooms.find(x => x.id === id), v = view(r), run = freeRun(r, S.day, S.slot);
+  $('modal').innerHTML = `<h3>Room ${esc(r.id)} <span class="pill ${v.k}"><i class="dot"></i>${v.t}</span></h3>
+    <dl><dt>Floor</dt><dd>${fname(r.floor)}</dd><dt>Capacity</dt><dd>${r.capacity} seats</dd><dt>Climate</dt><dd>${r.ac ? 'AC' : 'Non-AC'}</dd>
+    <dt>Projector</dt><dd>${r.projector ? 'Yes' : 'No'}</dd><dt>Wi-Fi</dt><dd>${r.wifi ? 'Yes' : 'No'}</dd>
+    <dt>Now</dt><dd>${v.by ? 'In use by ' + esc(v.by) : run >= 9 - S.slot ? 'Free for the rest of the day' : 'Free until ' + lbl(S.slot + run)}</dd></dl>
+    <div class="muted" style="margin-bottom:6px">${S.day}, 9:00 AM to 4:50 PM</div>
+    <div class="tl">${[...Array(9)].map((_, s) => `<i class="${occ(r, S.day, s) ? 'bad' : 'ok'}" title="${lbl(s)}"></i>`).join('')}</div>
+    <button class="go" style="margin-top:18px;width:100%" onclick="document.getElementById('ov').classList.remove('on')">Close</button>`;
+  $('ov').classList.add('on');
+}
+
+/* ---------- Setup ---------- */
+function initControls() {
+  $('day').innerHTML = days().map(d => `<option>${d}</option>`).join('');
+  $('time').innerHTML = '<option value="live">Live (now)</option>' + [...Array(9)].map((_, s) => `<option value="${s}">${lbl(s)}</option>`).join('');
+  $('f-floor').innerHTML = '<option value="All">All floors</option>' + floors().map(f => `<option value="${esc(f)}">${fname(f)}</option>`).join('');
+  $('chips').innerHTML = ['AC room for 2 hours', 'Room for 15 students with a projector', 'Rooms available after 4 PM', 'Quiet room on the ground floor']
+    .map(t => `<button class="chip" data-q="${esc(t)}">${esc(t)}</button>`).join('');
+}
+$('go').onclick = () => ask($('q').value);
+$('q').onkeydown = e => { if (e.key === 'Enter') ask($('q').value); };
+$('chips').onclick = e => { const b = e.target.closest('[data-q]'); if (b) ask(b.dataset.q); };
+$('floorGrid').onclick = e => { const b = e.target.closest('.room'); if (b) showRoom(b.dataset.id); };
+$('ov').onclick = e => { if (e.target.id === 'ov') $('ov').classList.remove('on'); };
+$('day').onchange = e => { S.day = e.target.value; S.live = false; S.ai = null; render(); };
+$('time').onchange = e => { if (e.target.value === 'live') { S.live = true; liveNow(); } else { S.live = false; S.slot = +e.target.value; } render(); };
+document.querySelector('.filters').addEventListener('input', e => { if (e.target.id !== 'up') renderFloors(); });
+$('ana').onclick = e => {
+  const m = e.target.closest('[data-m]');
+  if (m) { S.month = new Date(S.month.getFullYear(), S.month.getMonth() + +m.dataset.m, 1); renderAna(); renderMonth(); return; }
+  const d = e.target.closest('[data-d]');
+  if (d) { S.day = d.dataset.d; S.live = false; S.ai = null; render(); $('floors').scrollIntoView({ behavior: 'smooth' }); }
+};
+$('up').onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    try {
+      const j = JSON.parse(rd.result);
+      if (!Array.isArray(j.rooms) || !j.timetable) throw 0;
+      D = { rooms: j.rooms, tt: j.timetable }; S.ai = null; initControls(); if (S.live) liveNow(); render();
+    } catch (x) { alert('Could not read that file. Expected {"rooms":[...], "timetable":{section:{v, grid}}} in the same shape as the built-in data.'); }
+  };
+  rd.readAsText(f);
+};
+
+/* ---------- 3D map, countdown timer, Call the Squad ---------- */
+const fmtMin = m => { m = Math.round(m); let h = Math.floor(m / 60), mi = m % 60; const ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12; return h + ':' + String(mi).padStart(2, '0') + ' ' + ap; };
+const DAY_END = PM[9] + 50;
+const M3 = { sel: null, claimed: null, base: null, key: '' };
+function nowSec() {
+  const k = S.live + '|' + S.day + '|' + S.slot;
+  if (M3.key !== k) { M3.key = k; M3.base = { t: Date.now(), s: PM[S.slot] * 60 }; }
+  if (S.live) { const d = new Date(); return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds(); }
+  return M3.base.s + (Date.now() - M3.base.t) / 1000;
+}
+/* Clock state for one room: occupied -> counts down to end of class; free -> counts down to next class start */
+function roomClock(r) {
+  const nm = nowSec() / 60;
+  if (nm >= DAY_END) return { over: true, target: DAY_END * 60, until: DAY_END, txt: 'Classes are over for today' };
+  let s = -1; for (let i = 0; i < 9; i++) if (PM[i] <= nm) s = i;
+  if (s >= 0 && nm < PM[s] + 50 && occ(r, S.day, s)) {
+    let e = s; while (e + 1 < 9 && occ(r, S.day, e + 1)) e++;
+    let n = null; for (let i = e + 1; i < 9; i++) if (occ(r, S.day, i)) { n = i; break; }
+    return { busy: true, by: occ(r, S.day, s), target: (PM[e] + 50) * 60, until: PM[e] + 50, nextStart: n == null ? null : PM[n] };
+  }
+  for (let i = 0; i < 9; i++) if (PM[i] > nm && occ(r, S.day, i)) return { target: PM[i] * 60, until: PM[i] };
+  return { rest: true, target: DAY_END * 60, until: DAY_END };
+}
+const cd = sec => {
+  sec = Math.max(0, Math.ceil(sec)); const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), x = sec % 60, z = n => String(n).padStart(2, '0');
+  return h ? h + ':' + z(m) + ':' + z(x) : z(m) + ':' + z(x);
+};
+function m3Kind(r) {
+  if (M3.claimed === r.id) return 'rec';
+  if (roomClock(r).over) return 'ok';
+  return view(r).k;
+}
+function fitM3() {
+  const st = $('m3stage'); if (!st) return;
+  $('m3scene').style.setProperty('--k', Math.min(.92, Math.max(.5, st.clientWidth / 560)));
+}
+function render3D() {
+  const fl = floors();
+  $('m3scene').innerHTML = fl.map((f, i) => `<div class="m3plate" style="--i:${i}"><div class="m3lab">${fname(f)}</div>${D.rooms.filter(r => r.floor === f).map((r, j) => {
+    const k = m3Kind(r);
+    return `<div class="blk ${k}${M3.sel === r.id ? ' sel' : ''}" role="button" tabindex="0" data-id="${esc(r.id)}" aria-label="${esc(r.id)}, ${k}" style="left:${12 + j * 78}px"><div class="lift"><div class="f lf"></div><div class="f fr"></div><div class="f t"><span>${esc(r.id.replace('IST ', ''))}</span></div></div></div>`;
+  }).join('')}</div>`).join('');
+  fitM3(); renderM3Panel();
+}
+function renderM3Panel() {
+  const box = $('m3panel');
+  if (!M3.sel) { box.innerHTML = '<b>Room timer</b><p class="muted" style="margin-top:8px">Pick a room on the 3D map to see a live countdown to its next class, claim it, and call your friends over.</p>'; return; }
+  const r = D.rooms.find(x => x.id === M3.sel); if (!r) { M3.sel = null; return renderM3Panel(); }
+  const c = roomClock(r), k = m3Kind(r), mine = M3.claimed === r.id;
+  const until = fmtMin(c.until);
+  let head, sub;
+  if (c.over) { head = 'Classes done'; sub = 'No more classes today. Free until closing.'; }
+  else if (c.busy) { head = 'In use by ' + esc(c.by); sub = 'Class ends in' + (c.nextStart != null ? '. Next class here starts at ' + fmtMin(c.nextStart) : '. No more classes after this'); }
+  else if (c.rest) { head = 'Free for the rest of the day'; sub = 'Time left until ' + until; }
+  else { head = 'Free right now'; sub = 'Until the next class starts at ' + until; }
+  const msg = `📍 Heading to ${r.id}. It's free until ${until}. Come fast!`;
+  box.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><b style="font-size:1.2rem">Room ${esc(r.id)}</b><span class="m3pill ${k}"><i class="dot"></i>${mine ? 'Claimed by you' : c.over ? 'Available' : view(r).t}</span></div>
+    <p class="muted">${fname(r.floor)}, ${r.capacity} seats, ${r.ac ? 'AC' : 'Non-AC'}${r.projector ? ', projector' : ''}</p>
+    <div style="margin-top:14px;font-weight:700">${head}</div>
+    <div class="m3big" id="m3t" data-target="${c.target}">${cd(c.target - nowSec())}</div>
+    <div class="m3lbl">${sub}</div>
+    ${mine ? `<div class="m3msg">${esc(msg)}</div>
+      <button class="wa" id="m3call">📣 Call the Squad on WhatsApp</button>
+      <div class="m3act"><button class="btn" id="m3copy">Copy message</button><button class="btn" id="m3rel">Release room</button></div>`
+      : c.busy ? '<p class="muted" style="margin-top:16px">This room is occupied, so it cannot be claimed yet.</p>'
+      : '<button class="go" id="m3claim" style="width:100%;margin-top:18px">Claim this room</button>'}`;
+}
+function m3Select(id) { M3.sel = id; render3D(); if (matchMedia('(max-width:860px)').matches) $('m3panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+function m3Msg() {
+  const r = D.rooms.find(x => x.id === M3.claimed); if (!r) return '';
+  return `📍 Heading to ${r.id}. It's free until ${fmtMin(roomClock(r).until)}. Come fast!`;
+}
+$('m3scene').addEventListener('click', e => { const b = e.target.closest('.blk'); if (b) m3Select(b.dataset.id); });
+$('m3scene').addEventListener('keydown', e => { const b = e.target.closest('.blk'); if (b && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); m3Select(b.dataset.id); } });
+$('m3panel').addEventListener('click', e => {
+  const id = e.target.id;
+  if (id === 'm3claim') { M3.claimed = M3.sel; render3D(); }
+  else if (id === 'm3rel') { M3.claimed = null; render3D(); }
+  else if (id === 'm3call') { window.open('https://wa.me/?text=' + encodeURIComponent(m3Msg()), '_blank', 'noopener'); }
+  else if (id === 'm3copy') { const t = m3Msg(); (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => { e.target.textContent = 'Copied'; }, () => { e.target.textContent = 'Copy not allowed here'; }); }
+});
+addEventListener('resize', fitM3);
+setInterval(() => {
+  const t = $('m3t'); if (!t) return;
+  const left = +t.dataset.target - nowSec();
+  if (left <= 0) { if (M3.claimed && roomClock(D.rooms.find(x => x.id === M3.claimed) || D.rooms[0]).busy) M3.claimed = null; render3D(); }
+  else t.textContent = cd(left);
+}, 1000);
+
+initControls(); liveNow(); render();
+setTimeout(() => { S.loading = false; render(); }, 700);
+setInterval(() => { if (S.live) { liveNow(); render(); } }, 30000);
+
+})();
+</script>
+<script>
+(function(){
+
+    const portalData = {
+      "I_CSE_CYBER": {
+        subjects: [
+          { code: "21MAB101T", name: "Calculus and Linear Algebra", slot: "A" },
+          { code: "21PYB101T", name: "Engineering Physics", slot: "B" },
+          { code: "21CSC101T", name: "Programming for Problem Solving", slot: "C" },
+          { code: "21CYB101T", name: "Introduction to Cybersecurity", slot: "D" },
+          { code: "21GNH101T", name: "Communicative English", slot: "E" }
+        ],
+        grid: {
+          Monday: ["C", "A", "TEA BREAK", "D", "E", "-", "LUNCH", "LAB", "LAB", "-"],
+          Tuesday: ["B", "C", "TEA BREAK", "A", "D", "-", "LUNCH", "-", "-", "-"],
+          Wednesday: ["D", "B", "TEA BREAK", "C", "E", "-", "LUNCH", "-", "-", "-"],
+          Thursday: ["A", "E", "TEA BREAK", "B", "C", "-", "LUNCH", "LAB", "LAB", "-"],
+          Friday: ["E", "D", "TEA BREAK", "A", "B", "-", "LUNCH", "-", "-", "-"]
+        }
+      },
+      "IV_ECE_B": {
+        subjects: [
+          { code: "21GNH401T", name: "Behavioural Psychology", slot: "A" },
+          { code: "21ECC401T", name: "Wireless Communication", slot: "B" },
+          { code: "21ECC402P", name: "Computer Comm & Security", slot: "C" },
+          { code: "21ECE461T", name: "Semiconductor Memory", slot: "D" }
+        ],
+        grid: {
+          Monday: ["C", "A", "TEA BREAK", "E", "-", "-", "LUNCH", "-", "-", "-"],
+          Tuesday: ["C", "E", "TEA BREAK", "-", "B", "-", "LUNCH", "-", "-", "-"],
+          Wednesday: ["C", "D", "TEA BREAK", "A", "B", "-", "LUNCH", "-", "-", "-"],
+          Thursday: ["D", "B", "TEA BREAK", "LAB", "A", "-", "LUNCH", "-", "-", "-"],
+          Friday: ["-", "D", "TEA BREAK", "-", "-", "-", "LUNCH", "-", "-", "-"]
+        }
+      },
+      "IV_ECE_A": {
+        subjects: [
+          { code: "21GNH401T", name: "Behavioural Psychology", slot: "A" },
+          { code: "21ECC401T", name: "Wireless Communication and Antenna Systems", slot: "B" },
+          { code: "21ECC402P", name: "Computer Communication and Network Security", slot: "C" },
+          { code: "21ECE461T", name: "Semiconductor Memory Design", slot: "D" },
+          { code: "21ECE463T", name: "Scripting Language for Electronic Design Automation", slot: "E" },
+          { code: "21CSO355T", name: "Machine Learning for All", slot: "F" },
+          { code: "21ECC402P", name: "Computer Communication and Network Security (Lab)", slot: "LAB" }
+        ],
+        grid: {
+          Monday: ["C", "D", "TEA BREAK", "D", "-", "-", "LUNCH", "-", "-", "-"],
+          Tuesday: ["C", "-", "TEA BREAK", "F", "-", "-", "LUNCH", "LAB-IST 108", "LAB-IST 108", "LAB-IST 108"],
+          Wednesday: ["B", "E", "TEA BREAK", "F", "-", "-", "LUNCH", "-", "-", "-"],
+          Thursday: ["F", "A", "TEA BREAK", "E", "B", "-", "LUNCH", "-", "-", "-"],
+          Friday: ["C", "A", "TEA BREAK", "D", "E", "-", "LUNCH", "-", "-", "-"]
+        }
+      },
+      "III_ECE_A": {
+        subjects: [
+          { code: "21MAB302T", name: "Discrete Mathematics", slot: "A" },
+          { code: "21ECC301P", name: "Microprocessor, Microcontroller, and Interfacing Techniques", slot: "B" },
+          { code: "21ECC303T", name: "VLSI Design and Technology", slot: "C" },
+          { code: "21ECE468T", name: "System and Network on Chip", slot: "D" },
+          { code: "21CSO355T", name: "Machine Learning for All", slot: "E" },
+          { code: "21GNP301L", name: "Community Connect", slot: "F" },
+          { code: "21PDM301L", name: "Analytical and Logical Thinking Skills", slot: "G" },
+          { code: "21LEM301T", name: "Indian Art Form", slot: "H" },
+          { code: "21ECC311L", name: "VLSI Design / Microprocessor Laboratory", slot: "LAB" }
+        ],
+        grid: {
+          Monday: ["E", "B", "TEA BREAK", "B", "A", "LUNCH", "-", "G-625", "-", "-"],
+          Tuesday: ["H", "D", "TEA BREAK", "B", "B-Proj", "LUNCH", "-", "G-625", "-", "-"],
+          Wednesday: ["C", "A", "TEA BREAK", "D", "F", "LUNCH", "-", "LAB-108/309", "LAB-108/309", "-"],
+          Thursday: ["A", "K", "TEA BREAK", "C", "F", "LUNCH", "-", "LAB-108/309", "LAB-108/309", "-"],
+          Friday: ["D", "E", "TEA BREAK", "E", "C", "LUNCH", "-", "-", "-", "-"]
+        }
+      },
+      "III_ECE_B": {
+        subjects: [
+          { code: "21MAB302T", name: "Discrete Mathematics", slot: "A" },
+          { code: "21ECC301P", name: "Microprocessor, Microcontroller, and Interfacing Techniques", slot: "B" },
+          { code: "21ECC303T", name: "VLSI Design and Technology", slot: "C" },
+          { code: "21ECE468T", name: "System and Network on Chip", slot: "D" },
+          { code: "21CSO355T", name: "Machine Learning for All", slot: "E" },
+          { code: "21GNP301L", name: "Community Connect", slot: "F" },
+          { code: "21PDM301L", name: "Analytical and Logical Thinking Skills", slot: "G" },
+          { code: "21LEM301T", name: "Indian Art Form", slot: "H" },
+          { code: "21ECC311L", name: "VLSI Design / Microprocessor Laboratory", slot: "LAB" }
+        ],
+        grid: {
+          Monday: ["LAB-108/309", "LAB-108/309", "TEA BREAK", "-", "-", "LUNCH", "E", "B", "A", "D"],
+          Tuesday: ["G-625", "-", "TEA BREAK", "-", "-", "LUNCH", "F", "B", "D", "C"],
+          Wednesday: ["G-625", "-", "TEA BREAK", "-", "-", "LUNCH", "B-Proj", "B", "A", "H"],
+          Thursday: ["LAB-108/309", "LAB-108/309", "TEA BREAK", "-", "-", "LUNCH", "A", "C", "E", "F"],
+          Friday: ["-", "-", "TEA BREAK", "-", "-", "LUNCH", "C", "A", "E", "D"]
+        }
+      },
+      "III_ECE_DS": {
+        subjects: [
+          { code: "21MAB302T", name: "Discrete Mathematics", slot: "A" },
+          { code: "21ECC301P", name: "Microprocessor, Microcontroller, and Interfacing Techniques", slot: "B" },
+          { code: "21ECC303T", name: "VLSI Design and Technology", slot: "C" },
+          { code: "21CSO355T", name: "Machine Learning for All", slot: "D" },
+          { code: "21ECE371T", name: "Database Design and Management", slot: "E" },
+          { code: "21GNP301L", name: "Community Connect", slot: "F" },
+          { code: "21PDM301L", name: "Analytical and Logical Thinking Skills", slot: "G" },
+          { code: "21LEM301T", name: "Indian Art Form", slot: "H" },
+          { code: "21ECC311L", name: "VLSI Design / Microprocessor Laboratory", slot: "LAB" }
+        ],
+        grid: {
+          Monday: ["E", "B", "TEA BREAK", "C", "A", "LUNCH", "-", "LAB-108/107", "LAB-108/107", "G-625"],
+          Tuesday: ["C", "B", "TEA BREAK", "D", "F", "LUNCH", "-", "-", "-", "-"],
+          Wednesday: ["H", "B", "TEA BREAK", "A", "C", "LUNCH", "-", "-", "-", "-"],
+          Thursday: ["A", "D", "TEA BREAK", "E", "F", "LUNCH", "-", "-", "-", "-"],
+          Friday: ["D", "A", "TEA BREAK", "E", "B-Proj", "LUNCH", "-", "G-625", "LAB-108/107", "LAB-108/107"]
+        }
+      },
+      "II_ECE_DS_A": {
+        subjects: [
+          { code: "21MAB201T", name: "Transforms and Boundary Value Problems", slot: "A" },
+          { code: "21ECC201T", name: "Solid State Devices", slot: "B" },
+          { code: "21CSS201T", name: "Computer Organization and Architecture", slot: "C" },
+          { code: "21ECC203T", name: "Digital Logic Design", slot: "D" },
+          { code: "21ECC205T", name: "Electromagnetic Theory and Interference", slot: "E" },
+          { code: "21LEM201T", name: "Professional Ethics", slot: "F" },
+          { code: "21LEM202T", name: "Universal Human Values-II", slot: "G" },
+          { code: "21PDM201L", name: "Verbal Reasoning", slot: "H" },
+          { code: "21PDH209T", name: "Social Engineering", slot: "I" },
+          { code: "21ECC211L", name: "Devices and Digital IC Laboratory", slot: "LAB" }
+        ],
+        grid: {
+          Monday: ["E", "A", "TEA BREAK", "1", "-", "LUNCH", "G-602", "LAB-309/107", "LAB-309/107", "-"],
+          Tuesday: ["C", "A", "TEA BREAK", "A", "E", "LUNCH", "D", "G-602", "H-TB-106", "-"],
+          Wednesday: ["A", "B", "TEA BREAK", "C", "D", "LUNCH", "H-TB-106", "-", "-", "-"],
+          Thursday: ["B", "C", "TEA BREAK", "A", "F", "LUNCH", "LAB-309/107", "LAB-309/107", "-", "-"],
+          Friday: ["D", "B", "TEA BREAK", "E", "C", "LUNCH", "-", "-", "-", "-"]
+        }
+      },
+      "II_ECE_DS_B": {
+        subjects: [
+          { code: "21MAB201T", name: "Transforms and Boundary Value Problems", slot: "A" },
+          { code: "21ECC201T", name: "Solid State Devices", slot: "B" },
+          { code: "21CSS201T", name: "Computer Organization and Architecture", slot: "C" },
+          { code: "21ECC203T", name: "Digital Logic Design", slot: "D" },
+          { code: "21ECC205T", name: "Electromagnetic Theory and Interference", slot: "E" },
+          { code: "21LEM201T", name: "Professional Ethics", slot: "F" },
+          { code: "21LEM202T", name: "Universal Human Values-II", slot: "G" },
+          { code: "21PDM201L", name: "Verbal Reasoning", slot: "H" },
+          { code: "21PDH209T", name: "Social Engineering", slot: "I" },
+          { code: "21ECC211L", name: "Devices and Digital IC Laboratory", slot: "LAB" }
+        ],
+        grid: {
+          Monday: ["LAB-309/107", "LAB-309/107", "TEA BREAK", "D", "B", "LUNCH", "C", "1", "A", "-"],
+          Tuesday: ["-", "-", "TEA BREAK", "C", "D", "LUNCH", "E", "-", "-", "-"],
+          Wednesday: ["G-401", "-", "TEA BREAK", "1", "E", "LUNCH", "A", "D", "-", "-"],
+          Thursday: ["G-401", "H-TB-106", "TEA BREAK", "A", "C", "LUNCH", "B", "E", "-", "-"],
+          Friday: ["H-TB-106", "-", "TEA BREAK", "F", "A", "LUNCH", "B", "C", "-", "-"]
+        }
+      },
+      "III_BME": {
+        subjects: [
+          { code: "21MAB301T", name: "Probability and Statistics", slot: "A" },
+          { code: "21BMC302J", name: "Microcontrollers and Its Application in Medicine", slot: "B" },
+          { code: "21BMC301J", name: "Biomedical Signal Processing", slot: "C" },
+          { code: "21BME266T", name: "Biometrics", slot: "D" },
+          { code: "21ECO103T", name: "Modern Wireless Communication System", slot: "E" },
+          { code: "21BMC303T", name: "Principles of Medical Imaging", slot: "F" },
+          { code: "21PDM301L", name: "Analytical and Logical Thinking Skills", slot: "G" },
+          { code: "21LEM301T", name: "Indian Art Form", slot: "H" },
+          { code: "21GNP301L", name: "Community Connect", slot: "I" }
+        ],
+        grid: {
+          Monday: ["G-625", "-", "TEA BREAK", "MPMC LAB-107", "MPMC LAB-107", "LUNCH", "E", "B", "F", "H"],
+          Tuesday: ["BIO DSP LAB-108", "BIO DSP LAB-108", "TEA BREAK", "G-625", "-", "LUNCH", "C", "D", "A", "B"],
+          Wednesday: ["-", "-", "TEA BREAK", "-", "-", "LUNCH", "C", "A", "F", "D"],
+          Thursday: ["-", "-", "TEA BREAK", "1-108", "1-108", "LUNCH", "A", "C", "E", "B"],
+          Friday: ["1-108", "-", "TEA BREAK", "-", "-", "LUNCH", "F", "A", "D", "E"]
+        }
+      }
+    };
+
+    let healthChartInstance = null;
+    let adviceData = [];
+
+    function getTarget() {
+      const t = parseFloat(document.getElementById('targetPct').value);
+      return t > 0 && t <= 100 ? t : 75;
+    }
+
+    function onTargetChange() {
+      localStorage.setItem('srm_target', getTarget());
+      portalData[document.getElementById('classSelect').value].subjects.forEach((s, i) => updateRow(i, false));
+      calculateAttendance(); updateChart();
+    }
+
+    function markClass(i, present) {
+      const c = document.getElementById(`conducted_${i}`), a = document.getElementById(`attended_${i}`);
+      c.value = (parseInt(c.value) || 0) + 1;
+      if (present) a.value = (parseInt(a.value) || 0) + 1;
+      updateRow(i);
+    }
+
+    // Keep-at-least % for the remaining classes
+    function keepPct(a) { return a.r > 0 ? Math.min(100, Math.max(0, Math.ceil(a.need / a.r * 100))) : 0; }
+
+    function renderAdvice() {
+      const list = document.getElementById('advisorList'), sum = document.getElementById('advisorSummary');
+      const t = getTarget();
+      const weeks = Math.max(1, Math.ceil((new Date(document.getElementById('targetDate').value) - new Date()) / 6048e5));
+      list.innerHTML = adviceData.map(a => {
+        const cur = a.conducted ? (a.attended / a.conducted * 100).toFixed(1) : '0.0';
+        let cls = 'ok', keep = 'On track', text;
+        if (a.need > a.r) { cls = 'bad'; keep = 'Not reachable'; text = `Even attending all ${a.r} remaining classes will not reach ${t}%. Attend every class and ask your faculty about OD or medical leave.`; }
+        else if (a.need > 0) { cls = 'warn'; keep = `Keep ${keepPct(a)}%`; text = `Attend at least <b>${a.need} of the next ${a.r}</b> classes, about ${Math.ceil(a.need / weeks)} a week. You can miss ${a.r - a.need}.`; }
+        else { text = `Your ${t}% target is already secured for this semester. Keep attending to protect the buffer.`; }
+        return `<div class="adv-item ${cls}"><h3><span>${a.sub.name}</span><span class="keep">${keep}</span></h3><div>Now ${cur}%. ${text}</div></div>`;
+      }).join('');
+      const risky = adviceData.filter(a => a.need > 0).sort((x, y) => (y.need / (y.r || 1)) - (x.need / (x.r || 1)));
+      sum.innerHTML = !risky.length ? `All subjects are on track for ${t}%.`
+        : `Focus first on <b>${risky[0].sub.name}</b>. ${risky.length} of ${adviceData.length} subjects need attention to reach ${t}%.`;
+    }
+
+
+    
+    function setDefaultDate() {
+      const targetDate = new Date(new Date().getFullYear(), 10, 30); 
+      document.getElementById("targetDate").value = targetDate.toISOString().split('T')[0];
+    }
+
+    function autoSaveAttendance() {
+      const selectedClass = document.getElementById("classSelect").value;
+      const subjects = portalData[selectedClass].subjects;
+      const dataToSave = {};
+      
+      subjects.forEach((sub, index) => {
+        dataToSave[sub.code] = {
+          conducted: document.getElementById(`conducted_${index}`).value,
+          attended: document.getElementById(`attended_${index}`).value,
+          od: document.getElementById(`od_${index}`).value
+        };
+      });
+      localStorage.setItem(`srm_tracker_${selectedClass}`, JSON.stringify(dataToSave));
+      updateChart();
+    }
+
+    function initializeSubjects() {
+      const selectedClass = document.getElementById("classSelect").value;
+      const subjects = portalData[selectedClass].subjects;
+      const tbody = document.getElementById("calculatorBody");
+      tbody.innerHTML = "";
+
+      const savedData = JSON.parse(localStorage.getItem(`srm_tracker_${selectedClass}`)) || {};
+
+      subjects.forEach((sub, index) => {
+        const tr = document.createElement("tr");
+        const conductedVal = savedData[sub.code] ? savedData[sub.code].conducted : 30;
+        const attendedVal = savedData[sub.code] ? savedData[sub.code].attended : 20;
+        const odVal = savedData[sub.code] && savedData[sub.code].od ? savedData[sub.code].od : 0;
+
+        tr.innerHTML = `
+          <td class="left-align"><strong>${sub.code}</strong><br><small>${sub.name}</small><div class="quick"><button class="mini" onclick="markClass(${index},true)">+ Present</button><button class="mini" onclick="markClass(${index},false)">+ Absent</button></div></td>
+          <td><input type="number" id="conducted_${index}" min="0" value="${conductedVal}" oninput="updateRow(${index})"></td>
+          <td><input type="number" id="attended_${index}" min="0" value="${attendedVal}" oninput="updateRow(${index})"></td>
+          <td><input type="number" id="od_${index}" class="od-input" min="0" value="${odVal}" oninput="updateRow(${index})"></td>
+          <td id="percent_${index}">--%</td>
+          <td id="bunk_${index}" class="bunk-budget">-</td>
+          <td id="remaining_${index}">-</td>
+          <td id="req75_${index}">-</td>
+          <td id="status_${index}">-</td>
+        `;
+        tbody.appendChild(tr);
+        updateRow(index, false);
+      });
+      calculateAttendance();
+      initChart();
+    }
+
+    function updateRow(index, save = true) {
+      const conducted = parseInt(document.getElementById(`conducted_${index}`).value) || 0;
+      const attended = parseInt(document.getElementById(`attended_${index}`).value) || 0;
+      const od = parseInt(document.getElementById(`od_${index}`).value) || 0;
+      
+      const pctCell = document.getElementById(`percent_${index}`);
+      const bunkCell = document.getElementById(`bunk_${index}`);
+      
+      const totalAttended = attended + od;
+
+      if(conducted === 0) {
+        pctCell.innerText = "0%"; bunkCell.innerText = "0";
+      } else {
+        const pct = ((totalAttended / conducted) * 100).toFixed(1);
+        pctCell.innerHTML = `${pct}%<div class="bar"><span style="width:${Math.min(pct,100)}%"></span><em style="left:${getTarget()}%"></em></div>`;
+        
+        const maxAllowedConducted = Math.floor(totalAttended / (getTarget() / 100));
+        const safeSkips = maxAllowedConducted - conducted;
+        
+        if (safeSkips > 0) {
+          bunkCell.innerText = safeSkips; bunkCell.style.color = "var(--success)"; pctCell.style.color = "var(--success)";
+        } else {
+          bunkCell.innerText = "0"; bunkCell.style.color = "var(--danger)"; pctCell.style.color = "var(--danger)";
+        }
+      }
+      if(save) { autoSaveAttendance(); calculateAttendance(); }
+    }
+
+    // Chart.js Implementation - PIE CHART
+    function initChart() {
+      if (typeof Chart === 'undefined') {
+        const b = document.getElementById('healthChart').parentNode;
+        if (!b.querySelector('.chart-fallback')) b.insertAdjacentHTML('beforeend', '<p class="chart-fallback">Chart could not load. Check your internet connection and refresh.</p>');
+        updateChart();
+        return;
+      }
+      const ctx = document.getElementById('healthChart').getContext('2d');
+      if (healthChartInstance) healthChartInstance.destroy();
+      
+      healthChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels: [], datasets: [{ label: 'Current %', data: [], backgroundColor: [], borderWidth: 2 }] },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '52%',
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: items => { const d = chartDetails[items[0].dataIndex]; return d ? `${d.sub.code} · ${d.sub.name}` : ''; },
+                label: c => {
+                  const d = chartDetails[c.dataIndex]; if (!d) return '';
+                  return [
+                    `Attended: ${d.att} of ${d.conducted}` + (d.od ? ` (incl. ${d.od} OD/ML)` : ''),
+                    `Attendance: ${d.pct}% (target ${getTarget()}%)`,
+                    d.skips > 0 ? `Safe skips left: ${d.skips}` : 'No safe skips left',
+                    `Status: ${d.state}`
+                  ];
+                }
+              }
+            }
+          }
+        },
+        plugins: [{
+          id: 'sliceInfo',
+          afterDatasetsDraw(chart) {
+            const c = chart.ctx, isDark = document.documentElement.dataset.theme === 'dark';
+            const font = '"IBM Plex Sans", "Segoe UI", system-ui, sans-serif';
+            c.save(); c.textAlign = 'center'; c.textBaseline = 'middle';
+            chart.getDatasetMeta(0).data.forEach((arc, i) => {
+              const d = chartDetails[i]; if (!d || !d.pct) return;
+              const pt = arc.getCenterPoint();
+              c.fillStyle = '#ffffff'; c.font = `600 12px ${font}`;
+              c.fillText(`${d.pct}%`, pt.x, pt.y);
+            });
+            const a = chart.chartArea, cx = (a.left + a.right) / 2, cy = (a.top + a.bottom) / 2;
+            c.fillStyle = isDark ? '#e5e9f2' : '#182033'; c.font = `600 22px ${font}`;
+            c.fillText(`${chartOverall()}%`, cx, cy - 8);
+            c.fillStyle = isDark ? '#8b96ab' : '#667085'; c.font = `400 11px ${font}`;
+            c.fillText('Overall', cx, cy + 12);
+            c.restore();
+          }
+        }]
+      });
+      updateChart();
+    }
+
+    let chartDetails = [];
+    function chartOverall() {
+      const tc = chartDetails.reduce((s, d) => s + d.conducted, 0), ta = chartDetails.reduce((s, d) => s + d.att, 0);
+      return tc ? (ta / tc * 100).toFixed(1) : '0.0';
+    }
+
+    function renderChartDetails() {
+      const box = document.getElementById('chartDetails'); if (!box) return;
+      const tc = chartDetails.reduce((s, d) => s + d.conducted, 0), ta = chartDetails.reduce((s, d) => s + d.att, 0);
+      box.innerHTML = chartDetails.map(d => `<div class="cd-row"><i style="background:${d.color}"></i>
+        <div class="cd-main"><b>${d.sub.code}</b><small>${d.sub.name}</small></div>
+        <div class="cd-num"><b style="color:${d.color}">${d.pct}%</b><small>${d.att}/${d.conducted} · ${d.state}</small></div></div>`).join('')
+        + `<div class="cd-row cd-total"><div class="cd-main">Overall</div><div class="cd-num"><b>${chartOverall()}%</b><small>${ta}/${tc} classes</small></div></div>`;
+    }
+
+    function updateChart() {
+      const subjects = portalData[document.getElementById("classSelect").value].subjects;
+      const isDark = document.documentElement.dataset.theme === 'dark', t = getTarget();
+
+      chartDetails = subjects.map((sub, index) => {
+        const conducted = parseInt(document.getElementById(`conducted_${index}`).value) || 0;
+        const attended = parseInt(document.getElementById(`attended_${index}`).value) || 0;
+        const od = parseInt(document.getElementById(`od_${index}`).value) || 0;
+        const att = attended + od;
+        const pct = conducted === 0 ? 0 : Number((att / conducted * 100).toFixed(1));
+        const skips = Math.max(0, Math.floor(att / (t / 100)) - conducted);
+        const color = pct < t ? '#d64545' : pct < t + 5 ? '#d9963a' : '#2f9e73';
+        const state = pct < t ? 'Below target' : pct < t + 5 ? 'Close to limit' : 'Safe';
+        return { sub, conducted, att, od, pct, skips, color, state };
+      });
+      renderChartDetails();
+      if (!healthChartInstance) return;
+
+      const ds = healthChartInstance.data.datasets[0];
+      healthChartInstance.data.labels = chartDetails.map(d => d.sub.code);
+      ds.data = chartDetails.map(d => d.pct);
+      ds.backgroundColor = chartDetails.map(d => d.color);
+      ds.borderColor = isDark ? '#171f2e' : '#ffffff';
+      healthChartInstance.update();
+    }
+
+    function countDaysBetween(start, end) {
+      let counts = { 'Sunday': 0, 'Monday': 0, 'Tuesday': 0, 'Wednesday': 0, 'Thursday': 0, 'Friday': 0, 'Saturday': 0 };
+      let current = new Date(start); current.setHours(0,0,0,0);
+      let target = new Date(end); target.setHours(0,0,0,0);
+      while(current <= target) { counts[current.toLocaleDateString('en-US', {weekday: 'long'})]++; current.setDate(current.getDate() + 1); }
+      return counts;
+    }
+
+    function calculateAttendance() {
+      const targetDateVal = document.getElementById("targetDate").value;
+      if(!targetDateVal) return;
+      
+      const dayCounts = countDaysBetween(new Date(), new Date(targetDateVal));
+      const classData = portalData[document.getElementById("classSelect").value];
+      
+      adviceData = [];
+      classData.subjects.forEach((sub, index) => {
+        let remainingClasses = 0;
+        ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].forEach(day => {
+          if(classData.grid[day]) {
+             remainingClasses += (classData.grid[day].filter(s => s === sub.slot || s.includes(sub.slot)).length * dayCounts[day]);
+          }
+        });
+
+        document.getElementById(`remaining_${index}`).innerText = remainingClasses;
+
+        const conductedSoFar = parseInt(document.getElementById(`conducted_${index}`).value) || 0;
+        const attendedSoFar = parseInt(document.getElementById(`attended_${index}`).value) || 0;
+        const od = parseInt(document.getElementById(`od_${index}`).value) || 0;
+        
+        const totalPossibleClasses = conductedSoFar + remainingClasses;
+        const neededFor75 = Math.ceil((getTarget() / 100) * totalPossibleClasses);
+        const remainingNeeded75 = neededFor75 - (attendedSoFar + od);
+        adviceData.push({ sub, need: remainingNeeded75, r: remainingClasses, conducted: conductedSoFar, attended: attendedSoFar + od });
+
+        const req75Cell = document.getElementById(`req75_${index}`);
+        const statusCell = document.getElementById(`status_${index}`);
+
+        if(remainingNeeded75 <= 0) {
+          req75Cell.innerText = "Goal Met"; req75Cell.className = "status-safe";
+        } else if (remainingNeeded75 > remainingClasses) {
+          req75Cell.innerText = "Impossible"; req75Cell.className = "";
+        } else {
+          req75Cell.innerText = `${remainingNeeded75} / ${remainingClasses}`; req75Cell.className = "";
+        }
+
+        if (remainingNeeded75 > remainingClasses) statusCell.innerHTML = `<span class="irreversible-alert">Detention</span>`;
+        else if (remainingNeeded75 > (remainingClasses * 0.8)) statusCell.innerHTML = `<span class="status-warn">Critical</span>`;
+        else statusCell.innerHTML = `<span class="status-safe">Safe</span>`;
+      });
+      renderAdvice();
+    }
+
+    // Chatbot Logic
+    function toggleChat() {
+      document.getElementById('chatWidget').classList.toggle('active');
+    }
+
+    function handleChatEnter(e) {
+      if(e.key === 'Enter') processUserMsg();
+    }
+
+    function appendMsg(text, sender) {
+      const chatBody = document.getElementById('chatBody');
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `msg ${sender}`;
+      msgDiv.innerHTML = text;
+      chatBody.appendChild(msgDiv);
+      chatBody.scrollTop = chatBody.scrollHeight;
+    }
+
+    function processUserMsg() {
+      const inputEl = document.getElementById('chatInput');
+      const query = inputEl.value.trim().toLowerCase();
+      if(!query) return;
+      
+      appendMsg(inputEl.value, 'user');
+      inputEl.value = '';
+
+      setTimeout(() => {
+        const response = generateBotResponse(query);
+        appendMsg(response, 'bot');
+      }, 500);
+    }
+
+    function generateBotResponse(query) {
+      if (/maintain|plan|suggest|advice/.test(query) && !query.includes('skip') && adviceData.length) {
+        return adviceData.map(a => `<b>${a.sub.code}</b>: ` + (a.need > a.r ? 'not reachable, attend all' : a.need > 0 ? `keep ${keepPct(a)}% (${a.need} of ${a.r})` : 'on track')).join('<br>');
+      }
+      const selectedClass = document.getElementById("classSelect").value;
+      const subjects = portalData[selectedClass].subjects;
+      
+      // Match number of classes/days
+      const numMatch = query.match(/\d+/);
+      const classesToSkip = numMatch ? parseInt(numMatch[0]) : 1;
+
+      // Find matching subject
+      const targetSub = subjects.find(s => query.includes(s.name.toLowerCase().split(' ')[0]) || query.includes(s.code.toLowerCase()));
+      
+      if (targetSub) {
+        const index = subjects.indexOf(targetSub);
+        const conducted = parseInt(document.getElementById(`conducted_${index}`).value) || 0;
+        const attended = parseInt(document.getElementById(`attended_${index}`).value) || 0;
+        const od = parseInt(document.getElementById(`od_${index}`).value) || 0;
+        
+        // Simulate missing classes
+        const futureConducted = conducted + classesToSkip;
+        const futureAttended = attended + od; // Did not attend these new classes
+        
+        const newPct = ((futureAttended / futureConducted) * 100).toFixed(1);
+        
+        let advice = "";
+        if (newPct < getTarget()) advice = `🚨 Warning! Skipping ${classesToSkip} classes will drop your ${targetSub.name} attendance to **${newPct}%**, pulling you into the danger zone.`;
+        else advice = `✅ You're safe. If you skip ${classesToSkip} classes, your ${targetSub.name} attendance will become **${newPct}%**.`;
+        
+        return advice;
+      }
+      
+      if (query.includes("highest") || query.includes("best")) {
+         return "Check your 'Overall Health Map' chart on the dashboard! The green slices are your safest subjects.";
+      }
+
+      return "I didn't quite catch the subject name. Try asking something like: 'If I skip 2 classes of Physics...' or use the exact subject code.";
+    }
+
+    (() => {
+      const st = localStorage.getItem('srm_target'); if (st) document.getElementById('targetPct').value = st;
+      setDefaultDate();
+      initializeSubjects();
+    })();
+  
+Object.assign(window,{toggleChat,processUserMsg,handleChatEnter,initializeSubjects,calculateAttendance,onTargetChange,markClass,updateRow});
+addEventListener('themechange',()=>updateChart());
+addEventListener('appshow',e=>{ if(e.detail!=='attendance')return; if(healthChartInstance){healthChartInstance.resize();updateChart();} else if(typeof Chart!=='undefined') initChart(); });
+})();
+</script>
+<script>
+
+(function(){
+  var R=document.documentElement,K='campus_theme',apps={floor:'app-floor',attendance:'app-att'},titles={floor:'Floor Manager',attendance:'Attendance Tracker'};
+  function saved(){try{return localStorage.getItem(K)}catch(e){return null}}
+  function setTheme(t,persist){R.dataset.theme=t;var b=document.getElementById('siteTheme');if(b)b.textContent=t==='dark'?'Light mode':'Dark mode';
+    if(persist){try{localStorage.setItem(K,t)}catch(e){}}dispatchEvent(new Event('themechange'))}
+  setTheme(saved()||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'),false);
+  document.getElementById('siteTheme').onclick=function(){setTheme(R.dataset.theme==='dark'?'light':'dark',true)};
+  function route(){
+    var k=location.hash.replace(/^#\/?/,'');if(!apps[k])k='floor';
+    Object.keys(apps).forEach(function(a){document.getElementById(apps[a]).classList.toggle('on',a===k);
+      var l=document.querySelector('[data-tab="'+a+'"]');if(a===k)l.setAttribute('aria-current','page');else l.removeAttribute('aria-current')});
+    document.title=titles[k]+' | Campus Hub';scrollTo(0,0);
+    requestAnimationFrame(function(){dispatchEvent(new Event('resize'));dispatchEvent(new CustomEvent('appshow',{detail:k}))});
+  }
+  addEventListener('hashchange',route);route();
+})();
+
+</script>
+</body>
+</html>
